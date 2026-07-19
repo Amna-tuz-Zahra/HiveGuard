@@ -243,9 +243,3 @@ For quick visual testing, the standalone scanner allows uploading a macro photo 
 Distributed under the **MIT License**. See [LICENSE](LICENSE) for details.
 
 ---
-
-## 👨‍💻 Author
-
-Developed and structured as a high-quality portfolio repository.
-* **GitHub**: [@YourGitHubUsername](https://github.com/YourGitHubUsername)
-* **LinkedIn**: [@YourLinkedInProfile](https://linkedin.com/in/YourLinkedInProfile)
