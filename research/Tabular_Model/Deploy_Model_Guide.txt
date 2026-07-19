@@ -1,0 +1,122 @@
+# V3 Model Deployment & Serialization Guide
+
+This guide provides the exact Python code required to export the V3 Machine Learning environment (specifically the Best Model and its Preprocessor) out of the Jupyter Notebook and into flat files. It also provides the code to load them into a standalone Python script or Web Application (e.g., Flask/FastAPI).
+
+---
+
+## Part 1: Saving the Model (Run in Notebook)
+
+To deploy the model, we must save **both** the final trained model (`stack_model_v2`) and the fitted scaler (`scaler`) so that incoming real-world data can be normalized using the exact same mathematical bounds as the training data.
+
+Append a new cell at the very bottom of `Training_of_Apis_V3 (2).ipynb`, paste the following code, and execute it:
+
+```python
+import joblib
+
+# Ensure you have your variables: 'stack_model_v2' and 'scaler' 
+# (the StandardScaler used on X_train).
+
+# Save the Best Model (Stacking V2: RF + GB + XGB + TabPFN)
+joblib.dump(stack_model_v2, 'hg_v3_stack_model.pkl')
+
+# Save the Fitted Scaler
+joblib.dump(scaler, 'hg_v3_scaler.pkl')
+
+print("✅ Model and Scaler successfully saved to disk as .pkl files!")
+```
+
+*(Note: If you run into serialization errors with `TabPFN` inside the stack, switch to saving `stack_model_v1` instead, as its underlying tree algorithms are 100% natively supported by joblib).*
+
+---
+
+## Part 2: Using the Model in an Application
+
+Once you have `hg_v3_stack_model.pkl` and `hg_v3_scaler.pkl`, you can copy those two files into the directory of your Python Web App. 
+
+Here is the exact Python snippet to load the files and run inference on new tabular data.
+
+### Standard Python / Web-App Inference Code:
+
+```python
+import pandas as pd
+import joblib
+import numpy as np
+
+class HiveGuardPredictor:
+    def __init__(self, model_path='hg_v3_stack_model.pkl', scaler_path='hg_v3_scaler.pkl'):
+        # 1. Load the trained objects from disk
+        self.model = joblib.load(model_path)
+        self.scaler = joblib.load(scaler_path)
+        print("HiveGuard Predictive Engine Initialized.")
+
+    def predict_risk(self, user_input_json):
+        """
+        Receives a dictionary of exactly 19 features, formats them,
+        applies the Standard Scaler, and runs model predictions.
+        """
+        
+        # 2. Convert raw JSON/Dictionary payload to DataFrame format
+        # IMPORTANT: Maintain the exact feature order used during training
+        features = [
+            'quarter', 'state_encoded', 'colony_n', 'colony_added', 'colony_reno_pct',
+            'stress_diseases', 'stress_other', 'stress_other_pests_parasites',
+            'stress_pesticides', 'stress_unknown', 'stress_varroa_mites',
+            'yield_per_colony', 'yield_deviation_pct', 'avg_temp_celsius',
+            'max_temp_celsius', 'min_temp_celsius', 'temp_std', 'cold_week_ratio',
+            'varroa_pesticide_synergy'
+        ]
+        
+        df = pd.DataFrame([user_input_json], columns=features)
+        
+        # 3. Apply the saved StandardScaler
+        # (This uses the bounds derived from the original 80% train split)
+        X_scaled = self.scaler.transform(df)
+        
+        # 4. Generate Predictions
+        # a) Get categorical class (0=Low, 1=Medium, 2=Severe)
+        risk_class = self.model.predict(X_scaled)[0]
+        
+        # b) Get Probability Calibration (essential for your AI search heuristic / CSP)
+        probabilities = self.model.predict_proba(X_scaled)[0]
+        
+        # Format the output gracefully
+        class_names = {0: "Low", 1: "Medium", 2: "Severe"}
+        return {
+            "predicted_class": class_names[risk_class],
+            "severity_probability": float(probabilities[2]), # Probability of being 'Severe'
+            "full_probabilities": {
+                "P(Low)": float(probabilities[0]),
+                "P(Medium)": float(probabilities[1]),
+                "P(Severe)": float(probabilities[2])
+            }
+        }
+
+# ==========================================
+# Example Usage (Flask/FastAPI/Standalone):
+# ==========================================
+if __name__ == "__main__":
+    # Initialize the system during App Startup
+    hive_system = HiveGuardPredictor()
+
+    # Simulate an incoming web request payload
+    sample_request = {
+        'quarter': 1, 'state_encoded': 12.5, 'colony_n': 5000, 
+        'colony_added': 500, 'colony_reno_pct': 2.0, 
+        'stress_diseases': 5.0, 'stress_other': 0.0, 
+        'stress_other_pests_parasites': 2.0, 'stress_pesticides': 12.0, 
+        'stress_unknown': 0.0, 'stress_varroa_mites': 44.0, 
+        'yield_per_colony': 45.0, 'yield_deviation_pct': -10.0,
+        'avg_temp_celsius': 12.0, 'max_temp_celsius': 20.0, 
+        'min_temp_celsius': 4.0, 'temp_std': 5.5, 'cold_week_ratio': 0.8,
+        'varroa_pesticide_synergy': 528.0 # (mite_stress * pesticide_stress)
+    }
+
+    # Run Prediction
+    result = hive_system.predict_risk(sample_request)
+    print("\n--- INFERENCE RESULT ---")
+    print(result)
+```
+
+## Post-Deployment Advice
+- When building your Web App, this class structure `HiveGuardPredictor` ensures that you only load the `.pkl` files *once* into memory (during initialization), instead of reading the disk every time a request comes in.
+- The `severity_probability` returned in the dictionary maps directly to the calibrated probabilities you want to evaluate your Intelligent Agent's search path with.

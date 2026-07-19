@@ -1,0 +1,36 @@
+T6 Bee Varroa Classification Model
+=====================================
+Architecture  : EfficientNet-B4 (pretrained ImageNet, fully fine-tuned)
+Task          : Binary classification — Healthy vs Infected (Varroa mite)
+Input size    : 3 x 280 x 160 (RGB, H x W)
+Output        : 2 classes [Healthy, Infected]
+Classes       : 0=Healthy, 1=Infected (merged original labels 1+3)
+
+Normalization (apply before inference):
+  mean = [0.485, 0.456, 0.406]
+  std  = [0.229, 0.224, 0.225]
+
+Performance:
+  Val  accuracy : 95.04%
+  Test accuracy : 92.22%
+  Infected recall    : 92.78%
+  Infected precision : 81.61%
+  Healthy  recall    : 92.01%
+  Healthy  precision : 97.09%
+
+Training:
+  Phase 1 (warmup)    : 5 epochs, head only, LR=1e-3
+  Phase 2 (fine-tune) : 17 epochs, all layers, LR=1e-4
+  Early stopping patience : 7 epochs
+  Loss : CrossEntropyLoss (weighted + label smoothing 0.1)
+  Optimizer : Adam (weight decay=1e-4)
+  Scheduler : CosineAnnealingLR
+
+Dataset : 4085044 (Varroa bee classification)
+  Train : 8225 samples
+  Val   : 1876 samples
+  Test  : 3408 samples
+
+Files:
+  T6_Model.onnx  — for web/mobile/backend deployment
+  T6_Model.pth   — PyTorch checkpoint for further training

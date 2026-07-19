@@ -1,0 +1,64 @@
+HiveGuard - How to Run the Project
+==================================
+
+Welcome to the HiveGuard project! This application consists of a React frontend and a FastAPI backend with AI models. Follow these steps to get both running locally on your machine.
+
+Prerequisites
+-------------
+1. Node.js (v16 or higher recommended) - to run the frontend.
+2. Python (v3.9 or higher recommended) - to run the backend.
+
+Step 1: Start the Backend (API & AI Models)
+-------------------------------------------
+The backend runs on Python using FastAPI and PyTorch. 
+
+1. Open a terminal and navigate to the project's root folder, then go into the `backend` folder:
+   ```bash
+   cd backend
+   ```
+
+2. (Optional but highly recommended) Create and activate a Python virtual environment to keep dependencies organized:
+   - Windows:
+     ```bash
+     python -m venv venv
+     .\venv\Scripts\activate
+     ```
+   - Mac/Linux:
+     ```bash
+     python3 -m venv venv
+     source venv/bin/activate
+     ```
+
+3. Install the required Python packages:
+   ```bash
+   pip install -r requirements.txt
+   ```
+   *(Note: The codebase has been adjusted to handle standard library compilation issues with the tabular model, so it should run securely on Windows and Mac.)*
+
+4. Start the FastAPI server:
+   ```bash
+   python -m uvicorn app:app --reload --host 0.0.0.0 --port 8000
+   ```
+   Leave this terminal running. The backend API will now be available at http://localhost:8000.
+
+Step 2: Start the Frontend (User Interface)
+-------------------------------------------
+The frontend uses React and Vite.
+
+1. Open a **new** terminal window and ensure you are in the root `HiveGuard` folder (not inside the backend folder).
+
+2. Install the required Node.js dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Start the Vite development server:
+   ```bash
+   npm run dev
+   ```
+
+Step 3: Use the App
+-------------------
+1. Check the output of the `npm run dev` terminal. It will usually give you a local URL (e.g., `http://localhost:5173`).
+2. Open that URL in your web browser.
+3. You can now use the app! All requests to the backend (like image scanning or tabular data analysis) will automatically route to the Python server running on port 8000.

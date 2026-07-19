@@ -1,0 +1,11 @@
+Rule 1: Geographic Fencing (The US-Only Dropdown)
+The UI Rule: Do not use an open text box for "Location." Use a dropdown menu containing only the 50 US States.
+Why it protects the AI: Your Tabular model specifically uses a feature called state_encoded (which mapped historical loss rates for specific US states). If they type "London," the model will crash. By using a dropdown, you guarantee the backend gets a valid state_encoded number.
+Rule 2: Climate-Season Locking (Preventing Impossible Weather)
+The UI Rule: If the user selects Quarter 1 (Jan-Mar) from the Season dropdown, the "Ambient Temperature" slider should automatically restrict its maximum value (e.g., cap it at 70°F depending on the state).
+Why it protects the AI: Your CSP engine has strict thermodynamic rules. If a user tries to test the app by selecting "January in New York" but manually slides the temperature to "105°F", the CSP will get confused and might recommend summer treatments in the dead of winter. The UI should force realistic weather inputs.
+Rule 3: The "Honey Supers" Strict Toggle
+The UI Rule: You must include a mandatory Yes/No toggle that asks: "Are Honey Supers (boxes for human harvest) currently installed on the hive?"
+Why it protects the AI: In your Deep Research document (and CSP Step 8), it is legally forbidden to use Amitraz or Thymol when honey supers are on. If you don't ask the user this question, your AI might illegally prescribe a toxic chemical during a honey harvest, which an evaluator would instantly flag as a failure.
+The UI Rule: Add a dropdown for "Apiary Size" with fixed options: Hobbyist (1-10 hives) or Commercial (50+ hives).
+Why it protects the AI: In Step 8, your CSP has a financial budget constraint (Max Financial Budget = $1600). If a user has 1 hive, spending 
